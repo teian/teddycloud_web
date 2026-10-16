@@ -1,5 +1,6 @@
 import { defaultAPIConfig } from "../../../../config/defaultApiConfig";
 import { TeddyCloudApi } from "../../../../api";
+import { ResponseError } from "../../../../api/runtime";
 import { NotificationTypeEnum } from "../../../../types/teddyCloudNotificationTypes";
 import { TonieCardProps } from "../../../../types/tonieTypes";
 
@@ -158,7 +159,7 @@ export const useTonieCardActions = ({
                     model: modelTitle,
                     ruid: tonieCard.ruid,
                 }).replace(' "" ', ""),
-                error,
+                error instanceof ResponseError ? `HTTP ${error.response.status}` : error,
             );
         }
     };

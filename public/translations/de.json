@@ -2586,7 +2586,8 @@
         "toniesExportListCreateDate": "Erstellt am",
         "unsetTonie": "Tonie/Tag",
         "cloudAccessBlockedHint": "Cloud-Zugriff für diesen Tonie gesperrt. Klicken zum Aktivieren.",
-        "cloudAccessEnabledHint": "Cloud-Zugriff für diesen Tonie erlaubt. Klicken zum Sperren."
+        "cloudAccessEnabledHint": "Cloud-Zugriff für diesen Tonie erlaubt. Klicken zum Sperren.",
+        "cloudAuthMissingHint": "Für diese Figur fehlen noch brauchbare Cloud-Zugangsdaten. Eine Modellzuordnung allein ermöglicht keinen Cloud-Download."
     },
     "toniesJsonSearch": {
         "failedToFetchSearchResults": "Fehler beim Abrufen der Modelle",

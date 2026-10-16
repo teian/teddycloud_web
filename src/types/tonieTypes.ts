@@ -18,6 +18,7 @@ export type TonieCardProps = {
     live: boolean;
     nocloud: boolean;
     hasCloudAuth: boolean;
+    cloudAuthState?: "missing" | "empty" | "present";
     source: string;
     audioUrl: string;
     downloadTriggerUrl: string;

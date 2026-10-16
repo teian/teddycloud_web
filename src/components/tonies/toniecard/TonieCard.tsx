@@ -445,7 +445,16 @@ export const TonieCard: React.FC<{
                 <DownloadOutlined key="download" onClick={handleBackgroundDownload} />
             )
         ) : (
-            <Tooltip placement="top" title={t("tonies.noPlayableContentHint")}>
+            <Tooltip
+                placement="top"
+                title={t(
+                    !tonieCard.nocloud &&
+                        tonieCard.cloudAuthState &&
+                        tonieCard.cloudAuthState !== "present"
+                        ? "tonies.cloudAuthMissingHint"
+                        : "tonies.noPlayableContentHint",
+                )}
+            >
                 <PlayCircleOutlined
                     key="playpause"
                     style={{ cursor: "default", color: token.colorTextDisabled }}

@@ -45,3 +45,31 @@ for (const [status, body] of [
         expect(close).toHaveBeenCalledTimes(1);
     });
 }
+
+it("includes the actual HTTP status when the API client rejects the download", async () => {
+    const { ResponseError } = await import("../../../../api/runtime");
+    request.mockRejectedValue(
+        new ResponseError(new Response("", { status: 410 }), "Response returned an error code"),
+    );
+    const notify = vi.fn();
+    const actions = useTonieCardActions({
+        tonieCard: {
+            ruid: "97763c1a500304e0",
+            downloadTriggerUrl: "/content/download/97763C1A/500304E0?overlay=box",
+        } as TonieCardProps,
+        overlay: "box",
+        modelTitle: "Test",
+        t: (key) => key,
+        addNotification: notify,
+        addLoadingNotification: vi.fn(),
+        closeLoadingNotification: vi.fn(),
+        fetchUpdatedTonieCard: vi.fn(),
+    });
+    await actions.handleBackgroundDownload();
+    expect(notify).toHaveBeenCalledWith(
+        "error",
+        "tonies.messages.errorDuringDownload",
+        expect.stringContaining("HTTP 410"),
+        "tonies.title",
+    );
+});

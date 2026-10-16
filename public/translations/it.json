@@ -2586,7 +2586,8 @@
         "toniesExportListCreateDate": "Generato il",
         "unsetTonie": "Tonie/Tag",
         "cloudAccessBlockedHint": "Cloud access is blocked for this Tonie. Click to enable it.",
-        "cloudAccessEnabledHint": "Cloud access is enabled for this Tonie. Click to block it."
+        "cloudAccessEnabledHint": "Cloud access is enabled for this Tonie. Click to block it.",
+        "cloudAuthMissingHint": "Usable cloud credentials are missing for this figurine. Assigning a model alone does not enable a cloud download."
     },
     "toniesJsonSearch": {
         "failedToFetchSearchResults": "Errore durante il recupero dei modelli",
