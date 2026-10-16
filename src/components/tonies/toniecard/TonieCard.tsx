@@ -22,6 +22,7 @@ import { useTeddyCloud } from "../../../provider/TeddyCloudProvider";
 import { NotificationTypeEnum } from "../../../types/teddyCloudNotificationTypes";
 import { EditTonieModal } from "./modals/EditTonieModal";
 import { SelectAudioModal } from "../common/modals/SelectAudioModal";
+import { resolveModelAudioTarget } from "../../../utils/teddycloud/modelAudioResolution";
 import { useAudioContext } from "../../../provider/AudioProvider";
 import { CustomModelEditor } from "../custommodel/CustomModelEditor";
 import { toModelKey, useCustomModelKeys } from "../hooks/useCustomModelKeys";
@@ -453,21 +454,31 @@ export const TonieCard: React.FC<{
         );
 
     const cloudAction = (
-        <CloudSyncOutlined
-            key="nocloud"
-            className={tonieCard.nocloud ? "no-cloud" : "cloud"}
-            style={
-                readOnly
-                    ? {
-                          cursor: "default",
-                          color: tonieCard.nocloud ? token.colorError : token.colorTextDisabled,
-                      }
-                    : {
-                          color: tonieCard.nocloud ? token.colorError : token.colorTextDescription,
-                      }
-            }
-            onClick={readOnly ? undefined : handleNoCloudClick}
-        />
+        <Tooltip
+            title={t(
+                tonieCard.nocloud
+                    ? "tonies.cloudAccessBlockedHint"
+                    : "tonies.cloudAccessEnabledHint",
+            )}
+        >
+            <CloudSyncOutlined
+                key="nocloud"
+                className={tonieCard.nocloud ? "no-cloud" : "cloud"}
+                style={
+                    readOnly
+                        ? {
+                              cursor: "default",
+                              color: tonieCard.nocloud ? token.colorError : token.colorTextDisabled,
+                          }
+                        : {
+                              color: tonieCard.nocloud
+                                  ? token.colorError
+                                  : token.colorTextDescription,
+                          }
+                }
+                onClick={readOnly ? undefined : handleNoCloudClick}
+            />
+        </Tooltip>
     );
 
     const liveAction = (
@@ -628,12 +639,25 @@ export const TonieCard: React.FC<{
                     onSelect={handleFileSelected}
                     keySelectFileFileBrowser={keySelectFileFileBrowser}
                     initialPath={tempSelectedSource || selectedSource}
+                    overlay={overlay}
+                    onSelectModel={async (result) => {
+                        const audio = await resolveModelAudioTarget(result.value, overlay);
+                        setSelectedModel(result.value);
+                        setSelectedModelDisplayText(result.selectionText);
+                        setInputValidationModel({ validateStatus: "", help: "" });
+                        if (audio.path) {
+                            setSelectedSource(audio.path);
+                            setTempSelectedSource(audio.path);
+                            setInputValidationSource({ validateStatus: "", help: "" });
+                        }
+                    }}
                 />
             )}
 
             {isEditModalOpen && (
                 <EditTonieModal
                     open={isEditModalOpen}
+                    overlay={overlay}
                     title={editModalTitle}
                     onCancel={() => setIsEditModalOpen(false)}
                     onSave={handleSaveChanges}

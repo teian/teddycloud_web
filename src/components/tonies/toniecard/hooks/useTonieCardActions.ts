@@ -137,8 +137,9 @@ export const useTonieCardActions = ({
             );
 
             const response = await api.apiGetTeddyCloudApiRaw(path);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const blob = await response.blob();
+            if (!blob.size) throw new Error(t("tonies.messages.emptyCloudDownload"));
             closeLoadingNotification(key);
 
             notifySuccess(

@@ -47,12 +47,15 @@ function isTafFile(record: { isDir: boolean; name: string }): boolean {
     return !record.isDir && record.name.toLowerCase().endsWith(".taf");
 }
 
-function getEntryFirstAudioHashPair(entry: ToniesJsonEntry): AudioHashPair | null {
-    if (!entry?.audio_id?.length || !entry?.hash?.length) return null;
-    const audioId = normalizeAudioId(entry.audio_id[0]);
-    const hash = normalizeHash(entry.hash[0]);
-    if (!audioId || !hash) return null;
-    return { audioId, hash };
+function getEntryAudioHashPairs(entry: ToniesJsonEntry): AudioHashPair[] {
+    const pairs: AudioHashPair[] = [];
+    const count = Math.min(entry.audio_id?.length || 0, entry.hash?.length || 0);
+    for (let i = 0; i < count; i++) {
+        const audioId = normalizeAudioId(entry.audio_id![i]);
+        const hash = normalizeHash(entry.hash![i]);
+        if (audioId && hash) pairs.push({ audioId, hash });
+    }
+    return pairs;
 }
 
 function tafMatchesAudioHash(
@@ -102,13 +105,13 @@ export async function resolveModelAudioTarget(
         const allEntries = await fetchToniesEntries(overlay);
         const entry = allEntries.find((e) => normalizeModelKey(e.model) === modelKey);
         if (!entry) return { hasMapping: false, path: null };
-        const firstPair = getEntryFirstAudioHashPair(entry);
-        if (!firstPair) return { hasMapping: false, path: null };
+        const pairs = getEntryAudioHashPairs(entry);
+        if (!pairs.length) return { hasMapping: false, path: null };
 
         try {
             const allTAFs = await fetchAllTAFsInLibrary({ overlay });
             let match = allTAFs.find((r) =>
-                tafMatchesAudioHash(r, firstPair.audioId, firstPair.hash),
+                pairs.some((pair) => tafMatchesAudioHash(r, pair.audioId, pair.hash)),
             );
 
             if (!match) {

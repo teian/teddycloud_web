@@ -2293,7 +2293,8 @@
             "setTonieToSourceFailed": "Impossible de changer la source du Tonie!",
             "setTonieToSourceFailedDetails": "Impossible de changer la source du Tonie pour [{{ruid}}]: ",
             "setTonieToSourceSuccessful": "Source du Tonie définie avec succès!",
-            "setTonieToSourceSuccessfulDetails": "Source du Tonie définie sur {{selectedSource}} pour [{{ruid}}]"
+            "setTonieToSourceSuccessfulDetails": "Source du Tonie définie sur {{selectedSource}} pour [{{ruid}}]",
+            "emptyCloudDownload": "The Tonies cloud returned no audio data."
         },
         "navigationTitle": "Tonies",
         "noData": "Aucun Tonies/Tags personnalisés trouvé.",
@@ -2302,7 +2303,9 @@
         "selectFileModal": {
             "cancel": "Annuler",
             "ok": "OK",
-            "selectFile": "Sélectionner un fichier"
+            "selectFile": "Sélectionner un fichier",
+            "files": "Files",
+            "catalogHint": "Assign the model, title and picture from tonies.json. Matching audio is selected from this Toniebox’s library when available. Save in the edit dialog to apply the assignment."
         },
         "selectMode": {
             "cancel": "Annuler",
@@ -2581,7 +2584,9 @@
         },
         "toniesExportList": "Liste d'export des Tonies",
         "toniesExportListCreateDate": "Généré le",
-        "unsetTonie": "Tonie/Tag"
+        "unsetTonie": "Tonie/Tag",
+        "cloudAccessBlockedHint": "Cloud access is blocked for this Tonie. Click to enable it.",
+        "cloudAccessEnabledHint": "Cloud access is enabled for this Tonie. Click to block it."
     },
     "toniesJsonSearch": {
         "failedToFetchSearchResults": "Erreur lors de la récupération des modèles",

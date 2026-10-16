@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Modal, theme } from "antd";
+import { Button, Modal, Tabs, Typography, theme } from "antd";
+import { ToniesJsonSearch, type ToniesJsonSearchResult } from "../searches/ToniesJsonSearch";
 
 import { SelectFileFileBrowser } from "../../filebrowser/SelectFileFileBrowser";
 
@@ -28,6 +29,8 @@ interface SelectAudioModalProps {
     /** Optional title override */
     title?: string;
     zIndex?: number;
+    overlay?: string;
+    onSelectModel?: (result: ToniesJsonSearchResult) => Promise<void> | void;
 }
 
 export const SelectAudioModal: React.FC<SelectAudioModalProps> = ({
@@ -39,9 +42,14 @@ export const SelectAudioModal: React.FC<SelectAudioModalProps> = ({
     initialPath = "",
     title: titleProp,
     zIndex = undefined,
+    overlay = "",
+    onSelectModel,
 }) => {
     const { t } = useTranslation();
     const { token } = useToken();
+    const [activeTab, setActiveTab] = useState("files");
+    const [selectedModel, setSelectedModel] = useState<ToniesJsonSearchResult | null>(null);
+    const [assigning, setAssigning] = useState(false);
     const [selectedFile, setSelectedFile] = useState<{
         path: string;
         audioId?: string;
@@ -70,7 +78,11 @@ export const SelectAudioModal: React.FC<SelectAudioModalProps> = ({
     };
 
     useEffect(() => {
-        if (open) setSelectedFile(null);
+        if (open) {
+            setSelectedFile(null);
+            setSelectedModel(null);
+            setActiveTab("files");
+        }
     }, [open]);
 
     const handleFileSelectChange = (files: any[], path: string, _special: string) => {
@@ -78,10 +90,25 @@ export const SelectAudioModal: React.FC<SelectAudioModalProps> = ({
     };
 
     const canConfirm =
-        selectedFile &&
-        (!requireTafHeader || (selectedFile.audioId != null && selectedFile.hash != null));
+        activeTab === "catalog"
+            ? Boolean(selectedModel)
+            : Boolean(
+                  selectedFile &&
+                  (!requireTafHeader ||
+                      (selectedFile.audioId != null && selectedFile.hash != null)),
+              );
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        if (activeTab === "catalog" && selectedModel && onSelectModel) {
+            setAssigning(true);
+            try {
+                await onSelectModel(selectedModel);
+                onClose();
+            } finally {
+                setAssigning(false);
+            }
+            return;
+        }
         if (selectedFile && canConfirm) {
             onSelect({
                 path: selectedFile.path,
@@ -119,10 +146,16 @@ export const SelectAudioModal: React.FC<SelectAudioModalProps> = ({
                 background: token.colorBgElevated,
             }}
         >
-            <Button htmlType="button" onClick={handleCancel}>
+            <Button htmlType="button" onClick={handleCancel} disabled={assigning}>
                 {t("tonies.selectFileModal.cancel")}
             </Button>
-            <Button htmlType="button" type="primary" onClick={handleConfirm} disabled={!canConfirm}>
+            <Button
+                htmlType="button"
+                type="primary"
+                onClick={handleConfirm}
+                disabled={!canConfirm}
+                loading={assigning}
+            >
                 {t("tonies.selectFileModal.ok")}
             </Button>
         </div>
@@ -144,22 +177,79 @@ export const SelectAudioModal: React.FC<SelectAudioModalProps> = ({
             footer={footer}
             zIndex={zIndex}
         >
-            <SelectFileFileBrowser
-                key={keySelectFileFileBrowser}
-                initialPath={workingInitialPath}
-                special="library"
-                maxSelectedRows={1}
-                trackUrl={false}
-                filetypeFilter={allowedFileTypes}
-                onFileSelectChange={handleFileSelectChange}
-                onFileDoubleClick={(file, path) => {
-                    const resolved = resolveSelectedFile([file], path);
-                    if (!resolved) return;
-                    onSelect(resolved);
-                    setSelectedFile(null);
-                    onClose();
-                }}
-            />
+            {onSelectModel ? (
+                <Tabs
+                    activeKey={activeTab}
+                    onChange={setActiveTab}
+                    items={[
+                        {
+                            key: "files",
+                            label: t("tonies.selectFileModal.files"),
+                            children: (
+                                <SelectFileFileBrowser
+                                    key={keySelectFileFileBrowser}
+                                    initialPath={workingInitialPath}
+                                    special="library"
+                                    overlay={overlay}
+                                    maxSelectedRows={1}
+                                    trackUrl={false}
+                                    filetypeFilter={allowedFileTypes}
+                                    onFileSelectChange={handleFileSelectChange}
+                                    onFileDoubleClick={(file, path) => {
+                                        const resolved = resolveSelectedFile([file], path);
+                                        if (!resolved) return;
+                                        onSelect(resolved);
+                                        setSelectedFile(null);
+                                        onClose();
+                                    }}
+                                />
+                            ),
+                        },
+                        {
+                            key: "catalog",
+                            label: "tonies.json",
+                            children: (
+                                <div style={{ minHeight: 260 }}>
+                                    <Typography.Paragraph type="secondary">
+                                        {t("tonies.selectFileModal.catalogHint")}
+                                    </Typography.Paragraph>
+                                    <ToniesJsonSearch
+                                        overlay={overlay}
+                                        placeholder={t(
+                                            "tonies.editModal.placeholderSearchForAModel",
+                                        )}
+                                        showAddCustomTonieButton={false}
+                                        clearInputAfterSelection={false}
+                                        modelDisplayText={selectedModel?.selectionText || ""}
+                                        onChange={(value) => {
+                                            if (!value) setSelectedModel(null);
+                                        }}
+                                        onSelectResult={setSelectedModel}
+                                    />
+                                </div>
+                            ),
+                        },
+                    ]}
+                />
+            ) : (
+                <SelectFileFileBrowser
+                    key={keySelectFileFileBrowser}
+                    initialPath={workingInitialPath}
+                    special="library"
+                    overlay={overlay}
+                    maxSelectedRows={1}
+                    trackUrl={false}
+                    filetypeFilter={allowedFileTypes}
+                    onFileSelectChange={handleFileSelectChange}
+                    onFileDoubleClick={(file, path) => {
+                        const resolved = resolveSelectedFile([file], path);
+                        if (!resolved) return;
+                        onSelect(resolved);
+                        setSelectedFile(null);
+                        onClose();
+                    }}
+                />
+            )}
         </Modal>
     );
 };

@@ -17,7 +17,7 @@ export interface ToniesJsonEntry {
     trackTitles?: string[];
 }
 
-export function useToniesJsonSearch(onError?: (error: unknown) => void) {
+export function useToniesJsonSearch(onError?: (error: unknown) => void, overlay = "") {
     const [options, setOptions] = useState<ToniesJsonEntry[]>([]);
     const [value, setValue] = useState<string | undefined>();
 
@@ -40,7 +40,7 @@ export function useToniesJsonSearch(onError?: (error: unknown) => void) {
                 searchEncode;
 
             try {
-                const response = await api.apiGetTeddyCloudApiRaw(path);
+                const response = await api.apiGetTeddyCloudApiRaw(path, overlay);
                 const data: TonieInfo[] = await response.json();
 
                 const result: ToniesJsonEntry[] = data.map((item) => {
@@ -73,7 +73,7 @@ export function useToniesJsonSearch(onError?: (error: unknown) => void) {
                 }
             }
         },
-        [onError],
+        [onError, overlay],
     );
 
     const select = useCallback((newValue: string) => {

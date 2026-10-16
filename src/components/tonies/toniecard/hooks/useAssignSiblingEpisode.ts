@@ -9,6 +9,7 @@ const api = new TeddyCloudApi(defaultAPIConfig());
 
 type UseAssignSiblingEpisodeParams = {
     source: string;
+    overlay?: string;
     onSelectedSourceChange: (value: string) => void;
     setInputValidationSource: (state: { validateStatus: ValidateStatus; help: string }) => void;
 };
@@ -21,6 +22,7 @@ type UseAssignSiblingEpisodeParams = {
  */
 export const useAssignSiblingEpisode = ({
     source,
+    overlay = "",
     onSelectedSourceChange,
     setInputValidationSource,
 }: UseAssignSiblingEpisodeParams) => {
@@ -42,6 +44,7 @@ export const useAssignSiblingEpisode = ({
 
         api.apiGetTeddyCloudApiRaw(
             `/api/fileIndexV2?path=${encodeURIComponent(sourceFolder)}&special=library`,
+            overlay,
         )
             .then((response) => {
                 if (!response.ok) {
@@ -84,7 +87,7 @@ export const useAssignSiblingEpisode = ({
         return () => {
             cancelled = true;
         };
-    }, [source]);
+    }, [source, overlay]);
 
     const assignEpisode = (file: Record | null) => {
         if (!file) return;

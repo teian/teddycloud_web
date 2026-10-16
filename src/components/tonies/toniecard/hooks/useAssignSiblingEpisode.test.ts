@@ -112,6 +112,7 @@ describe("useAssignSiblingEpisode", () => {
 
         expect(apiMock.apiGetTeddyCloudApiRaw).toHaveBeenCalledWith(
             "/api/fileIndexV2?path=Series&special=library",
+            "",
         );
         expect(mounted.current.prevEpisodeFile?.name).toBe("01.taf");
         expect(mounted.current.nextEpisodeFile?.name).toBe("04.taf");

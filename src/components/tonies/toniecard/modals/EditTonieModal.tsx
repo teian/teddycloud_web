@@ -26,6 +26,7 @@ type ValidateStatus = "" | "success" | "warning" | "error" | "validating" | unde
 
 interface EditTonieModalProps {
     open: boolean;
+    overlay?: string;
     title: React.ReactNode;
     onCancel: () => void;
     onSave: () => void;
@@ -86,6 +87,7 @@ interface EditTonieModalProps {
 
 export const EditTonieModal: React.FC<EditTonieModalProps> = ({
     open,
+    overlay = "",
     title,
     onCancel,
     onSave,
@@ -130,6 +132,7 @@ export const EditTonieModal: React.FC<EditTonieModalProps> = ({
         handleAssignPrevEpisode,
     } = useAssignSiblingEpisode({
         source: selectedSource,
+        overlay,
         onSelectedSourceChange,
         setInputValidationSource,
     });
@@ -443,6 +446,7 @@ export const EditTonieModal: React.FC<EditTonieModalProps> = ({
                             }
                         />
                         <ToniesJsonSearch
+                            overlay={overlay}
                             placeholder={t("tonies.editModal.placeholderSearchForAModel")}
                             clearInputAfterSelection={true}
                             onChange={onSearchModelChange}

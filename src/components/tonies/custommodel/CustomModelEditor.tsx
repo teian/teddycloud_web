@@ -1112,6 +1112,7 @@ export const CustomModelEditor: React.FC<CustomModelEditorProps> = ({
                     setTargetAudioPairIndex(null);
                 }}
                 keySelectFileFileBrowser={keySelectAudioFileBrowser}
+                overlay={overlay}
                 requireTafHeader
                 zIndex={3200}
             />

@@ -34,6 +34,7 @@ interface ToniesJsonSearchProps {
     /** Display text when a model is selected (e.g. "[01-0013] Sample Series - Episode Title") */
     modelDisplayText?: string;
 
+    overlay?: string;
     prefix?: React.ReactNode;
     suffix?: React.ReactNode;
 }
@@ -46,6 +47,7 @@ export const ToniesJsonSearch: React.FC<ToniesJsonSearchProps> = ({
     onChange,
     onSelectResult,
     modelDisplayText = "",
+    overlay = "",
     prefix,
     suffix,
 }) => {
@@ -60,7 +62,7 @@ export const ToniesJsonSearch: React.FC<ToniesJsonSearchProps> = ({
             t("toniesJsonSearch.failedToFetchSearchResultsDetails") + String(error),
             t("tonies.navigationTitle"),
         );
-    });
+    }, overlay);
 
     const [searchText, setSearchText] = useState("");
 
