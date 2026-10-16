@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { TeddyCloudApi } from "../api";
@@ -33,13 +33,16 @@ export const useTonies = (options: UseToniesOptions = {}) => {
     const { t } = useTranslation();
     const { addNotification, toniesRefreshTrigger } = useTeddyCloud();
 
+    const loadedOverlay = useRef<string | null>(null);
     const [tonies, setTonies] = useState<TonieCardProps[]>([]);
     const [defaultLanguage, setDefaultLanguage] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
+        let active = true;
+        const key = String(merged) + "/" + overlay;
         const fetchTonies = async () => {
-            setLoading(true);
+            if (loadedOverlay.current !== key) setLoading(true);
 
             try {
                 let tonieData: TonieCardProps[];
@@ -74,8 +77,9 @@ export const useTonies = (options: UseToniesOptions = {}) => {
                     tonieData = [...tonieData].sort(() => Math.random() - 0.5);
                 }
 
-                setTonies(tonieData);
+                if (active) setTonies(tonieData);
             } catch (error) {
+                if (!active) return;
                 addNotification(
                     NotificationTypeEnum.Error,
                     t("tonies.errorFetchingTonies"),
@@ -83,11 +87,17 @@ export const useTonies = (options: UseToniesOptions = {}) => {
                     t("tonies.navigationTitle"),
                 );
             } finally {
-                setLoading(false);
+                if (active) {
+                    loadedOverlay.current = key;
+                    setLoading(false);
+                }
             }
         };
 
         fetchTonies();
+        return () => {
+            active = false;
+        };
     }, [overlay, merged, toniesRefreshTrigger]);
 
     useEffect(() => {

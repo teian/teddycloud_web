@@ -32,7 +32,7 @@ export class BoxineApi extends runtime.BaseAPI {
 
         const response = await this.request(
             {
-                path: `/v1/time`,
+                path: `/api/time`,
                 method: "GET",
                 headers: headerParameters,
                 query: queryParameters,

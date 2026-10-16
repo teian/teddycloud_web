@@ -22,9 +22,10 @@ import {
 import { PluginMeta, TeddyCloudSection } from "../types/pluginsMetaTypes";
 import { TeddyCloudApi } from "../api";
 import { defaultAPIConfig } from "../config/defaultApiConfig";
-import { useBoxModelImages } from "../hooks/useBoxModels";
+import { useBoxModelImages } from "../goteddycloud/useBoxModels";
 import { TonieboxImage } from "../types/tonieboxTypes";
 import { generateUUID } from "../utils/ids/generateUUID";
+import { userStorage } from "../utils/storage/userStorage";
 
 const api = new TeddyCloudApi(defaultAPIConfig());
 
@@ -73,7 +74,7 @@ const normalizeStoredNotifications = (value: unknown): NotificationRecord[] => {
 const persistNotifications = (notificationsToPersist: NotificationRecord[]) => {
     if (typeof window === "undefined") return;
 
-    localStorage.setItem(
+    userStorage.setItem(
         NOTIFICATIONS_STORAGE_KEY,
         JSON.stringify(notificationsToPersist.slice(0, MAX_STORED_NOTIFICATIONS)),
     );
@@ -83,7 +84,7 @@ const readStoredNotifications = (): NotificationRecord[] => {
     if (typeof window === "undefined") return [];
 
     try {
-        const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        const stored = userStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
         if (!stored) return [];
 
         const parsed = normalizeStoredNotifications(JSON.parse(stored));
@@ -150,6 +151,7 @@ interface TeddyCloudContextType {
 
     boxModelImages: TonieboxImage[];
     boxModelImagesLoading: boolean;
+    boxModelImagesError: boolean;
 
     /** Increment to trigger tonies list refetch (e.g. after custom model save) */
     toniesRefreshTrigger: number;
@@ -181,6 +183,7 @@ const TeddyCloudContext = createContext<TeddyCloudContextType>({
     fetchPlugins: async () => {},
     boxModelImages: [],
     boxModelImagesLoading: false,
+    boxModelImagesError: false,
     toniesRefreshTrigger: 0,
     invalidateTonies: () => {},
 });
@@ -208,7 +211,11 @@ export function TeddyCloudProvider({ children }: TeddyCloudProviderProps) {
         setToniesRefreshTrigger((prev) => prev + 1);
     }, []);
 
-    const { boxModelImages, loading: boxModelImagesLoading } = useBoxModelImages();
+    const {
+        boxModelImages,
+        loading: boxModelImagesLoading,
+        error: boxModelImagesError,
+    } = useBoxModelImages();
 
     // =====================================
     // Notification Handling
@@ -304,7 +311,7 @@ export function TeddyCloudProvider({ children }: TeddyCloudProviderProps) {
 
     const clearAllNotifications = useCallback(() => {
         setNotifications([]);
-        localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
+        userStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
     }, []);
 
     const reloadNotifications = loadStoredNotifications;
@@ -450,6 +457,7 @@ export function TeddyCloudProvider({ children }: TeddyCloudProviderProps) {
             fetchPlugins,
             boxModelImages,
             boxModelImagesLoading,
+            boxModelImagesError,
             toniesRefreshTrigger,
             invalidateTonies,
         }),
@@ -473,6 +481,7 @@ export function TeddyCloudProvider({ children }: TeddyCloudProviderProps) {
             fetchPlugins,
             boxModelImages,
             boxModelImagesLoading,
+            boxModelImagesError,
             toniesRefreshTrigger,
             invalidateTonies,
         ],

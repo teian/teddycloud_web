@@ -29,6 +29,9 @@ import { SettingsModal } from "./modals/SettingsModal";
 import { DeleteModal } from "./modals/DeleteModal";
 import { useTriggerWriteConfig } from "./hooks/useTriggerWriteConfig";
 import { canHover } from "../../../utils/browser/browserUtils";
+import { withBase } from "../../../utils/basePath";
+
+import { useLiveUpdates } from "../../../goteddycloud/LiveUpdates";
 
 const api = new TeddyCloudApi(defaultAPIConfig());
 
@@ -51,6 +54,7 @@ export const TonieboxCard: React.FC<{
     const [tonieboxStatus, setTonieboxStatus] = useState<boolean>(false);
     const [tonieboxVersion, setTonieboxVersion] = useState<string>("");
     const [lastOnline, setLastOnline] = useState<string>("");
+    const { revision } = useLiveUpdates();
     const [lastIp, setLastIp] = useState<string>("");
     const [cfwInstalled, setCFWInstalled] = useState<boolean>(false);
     const [lastPlayedTonieName, setLastPlayedTonieName] = useState<React.ReactNode>(null);
@@ -132,7 +136,7 @@ export const TonieboxCard: React.FC<{
         selectBoxImage(tonieboxCard.boxModel);
         setSelectedModel(tonieboxCard.boxModel);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tonieboxCard.ID, tonieboxCard.boxModel, currentLanguage]);
+    }, [tonieboxCard.ID, tonieboxCard.boxModel, currentLanguage, revision]);
 
     useEffect(() => {
         if (checkCC3200CFW && lastIp && tonieboxVersion === BoxVersionsEnum.cc3200) {
@@ -160,7 +164,7 @@ export const TonieboxCard: React.FC<{
         if (selectedImage) {
             setBoxImage(
                 <img
-                    src={selectedImage.img_src}
+                    src={withBase(selectedImage.img_src)}
                     alt=""
                     style={{
                         ...getCroppedImageStyle(id),
@@ -214,7 +218,7 @@ export const TonieboxCard: React.FC<{
                     }
                 >
                     <img
-                        src={tonie[0].tonieInfo.picture}
+                        src={withBase(tonie[0].tonieInfo.picture)}
                         alt="Tonie"
                         style={{
                             position: "absolute",

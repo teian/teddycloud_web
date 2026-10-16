@@ -1,3 +1,5 @@
+import { useGoText } from "../../goteddycloud/text";
+import { useAuth } from "../../provider/AuthProvider";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -22,6 +24,8 @@ import { TeddyCloudSection } from "../../types/pluginsMetaTypes";
 import { useCustomModelsEditorLauncher } from "./hooks/useCustomModelsEditorFeature";
 
 export const ToniesSubNav = () => {
+    const text = useGoText();
+    const auth = useAuth();
     const { t } = useTranslation();
     const { setNavOpen, setSubNavOpen, setCurrentTCSection, plugins } = useTeddyCloud();
     const { launchCustomModelsEditor } = useCustomModelsEditorLauncher();
@@ -64,6 +68,21 @@ export const ToniesSubNav = () => {
         }));
 
     const subnav: MenuProps["items"] = [
+        {
+            key: "shares",
+            label: (
+                <Link
+                    to="/tonies/shared"
+                    onClick={() => {
+                        setNavOpen(false);
+                        setSubNavOpen(false);
+                    }}
+                >
+                    {text("shares")}
+                </Link>
+            ),
+            title: text("shares"),
+        },
         {
             key: "tonies",
             label: (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { subscribeToEvents, type LiveEvent } from "../../../../goteddycloud/liveStream";
 
 export const useRtnl = () => {
     const [logEntries, setLogEntries] = useState<string[]>([]);
@@ -33,11 +34,10 @@ export const useRtnl = () => {
     }, []);
 
     useEffect(() => {
-        const baseUrl = import.meta.env.VITE_APP_TEDDYCLOUD_API_URL;
-        const eventSource = new EventSource(`${baseUrl}/api/sse`);
+        const handlers = new Map<string, (event: LiveEvent) => void>();
 
         const appendLog = (entry: string) => {
-            setLogEntries((prev) => [...prev, entry]);
+            setLogEntries((prev) => [...prev.slice(-1999), entry]);
         };
 
         const functionHandlers: { [key: string]: (payload: string) => void } = {
@@ -76,27 +76,19 @@ export const useRtnl = () => {
             },
         };
 
-        eventSource.onopen = () => {
-            console.log("RTNL SSE connection established.");
-        };
-
-        eventSource.addEventListener("keep-alive", (e) => {
-            console.log("keep-alive event received:", e);
-        });
-
-        eventSource.addEventListener("pressed", (event: MessageEvent) => {
+        handlers.set("pressed", (event: LiveEvent) => {
             try {
-                const data = JSON.parse(event.data);
+                const data = event;
                 appendLog("Pressed: " + data.data);
             } catch (err) {
                 console.error("Error parsing 'pressed' event:", err);
             }
         });
 
-        eventSource.addEventListener("rtnl-raw-log2", (event: MessageEvent) => {
+        handlers.set("rtnl-raw-log2", (event: LiveEvent) => {
             try {
-                const data = JSON.parse(event.data);
-                const entryData = data.data;
+                const data = event;
+                const entryData = data.data as Record<string, any>;
 
                 const funcGroup = entryData.function_group.toString().padStart(2, " ");
                 const func = entryData.function;
@@ -130,10 +122,10 @@ export const useRtnl = () => {
             }
         });
 
-        eventSource.addEventListener("rtnl-raw-log3", (event: MessageEvent) => {
+        handlers.set("rtnl-raw-log3", (event: LiveEvent) => {
             try {
-                const data = JSON.parse(event.data);
-                const entryData = data.data;
+                const data = event;
+                const entryData = data.data as Record<string, any>;
                 appendLog(
                     "Raw3 | Datetime: " + entryData.datetime + " Unknown: " + entryData.field2,
                 );
@@ -142,14 +134,7 @@ export const useRtnl = () => {
             }
         });
 
-        eventSource.onerror = (error) => {
-            console.error("RTNL EventSource failed:", error);
-        };
-
-        return () => {
-            console.log("RTNL SSE connection closed.");
-            eventSource.close();
-        };
+        return subscribeToEvents((event) => handlers.get(event.type)?.(event));
     }, [hexToStr, littleEndianToNum]);
 
     const clearRtnl = useCallback(() => {

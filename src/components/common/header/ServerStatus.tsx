@@ -4,18 +4,15 @@ import { Space, Tag, Tooltip, theme } from "antd";
 import { CheckCircleOutlined, CloseCircleOutlined, LockOutlined } from "@ant-design/icons";
 
 import { defaultAPIConfig } from "../../../config/defaultApiConfig";
-import { BoxineApi, BoxineForcedApi, TeddyCloudApi } from "../../../api";
+import { BoxineApi } from "../../../api";
+import { readCloudStatus } from "../../../goteddycloud/api";
 
 import { HiddenDesktop, HiddenMobile } from "../StyledComponents";
 import { useTeddyCloud } from "../../../provider/TeddyCloudProvider";
 
 const boxineApi = new BoxineApi(defaultAPIConfig());
-const boxineForcedApi = new BoxineForcedApi(defaultAPIConfig());
-const teddyCloudApi = new TeddyCloudApi(defaultAPIConfig());
 
 const { useToken } = theme;
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const ServerStatus = () => {
     const { t } = useTranslation();
@@ -26,26 +23,6 @@ export const ServerStatus = () => {
     const [boxineEnabledStatus, setBoxineEnabledStatus] = useState(true);
     const [teddyStatus, setTeddyStatus] = useState(false);
 
-    const fetchBoxineEnabledStatus = useCallback(async (): Promise<boolean> => {
-        try {
-            const response = await teddyCloudApi.apiGetTeddyCloudSettingRaw("cloud.enabled");
-            const text = (await response.text()).trim().toLowerCase();
-            const enabled = text === "true";
-
-            setBoxineEnabledStatus(enabled);
-            if (!enabled) {
-                setBoxineStatus(false);
-            }
-
-            return enabled;
-        } catch {
-            console.log("Something went wrong getting cloud.enabled.");
-            setBoxineEnabledStatus(false);
-            setBoxineStatus(false);
-            return false;
-        }
-    }, []);
-
     const fetchTeddyStatus = useCallback(async () => {
         try {
             const timeRequest = (await boxineApi.v1TimeGet()) as string;
@@ -55,34 +32,19 @@ export const ServerStatus = () => {
         }
     }, []);
 
-    const fetchBoxineStatusWithRetries = useCallback(async () => {
-        const maxRetries = 10;
-
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-            try {
-                const timeRequest = (await boxineForcedApi.reverseV1TimeGet()) as string;
-                if (timeRequest.length === 10) {
-                    setBoxineStatus(true);
-                    return;
-                }
-            } catch {
-                setBoxineStatus(false);
-                if (attempt < maxRetries - 1) {
-                    await delay(500);
-                }
-            }
+    const fetchBoxineStatus = useCallback(async () => {
+        try {
+            const status = await readCloudStatus();
+            setBoxineEnabledStatus(status.enabled);
+            setBoxineStatus(status.available);
+        } catch {
+            setBoxineStatus(false);
         }
     }, []);
 
     const fetchCloudStatusUsingTimeRequests = useCallback(async () => {
-        const isEnabled = await fetchBoxineEnabledStatus();
-
-        await fetchTeddyStatus();
-
-        if (isEnabled) {
-            await fetchBoxineStatusWithRetries();
-        }
-    }, [fetchBoxineEnabledStatus, fetchTeddyStatus, fetchBoxineStatusWithRetries]);
+        await Promise.all([fetchTeddyStatus(), fetchBoxineStatus()]);
+    }, [fetchTeddyStatus, fetchBoxineStatus]);
 
     useEffect(() => {
         fetchCloudStatusUsingTimeRequests();

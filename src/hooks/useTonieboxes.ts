@@ -7,10 +7,13 @@ import { TonieboxCardProps } from "../types/tonieboxTypes";
 import { useTeddyCloud } from "../provider/TeddyCloudProvider";
 import { NotificationTypeEnum } from "../types/teddyCloudNotificationTypes";
 
+import { useLiveUpdates } from "../goteddycloud/LiveUpdates";
+
 const api = new TeddyCloudApi(defaultAPIConfig());
 
 export const useTonieboxes = () => {
     const { t } = useTranslation();
+    const { revision } = useLiveUpdates();
     const { addNotification } = useTeddyCloud();
 
     const [tonieboxes, setTonieboxes] = useState<TonieboxCardProps[]>([]);
@@ -33,7 +36,7 @@ export const useTonieboxes = () => {
             }
         };
         fetch();
-    }, []);
+    }, [revision]);
 
     return { tonieboxes, loading };
 };

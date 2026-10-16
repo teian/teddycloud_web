@@ -1,3 +1,5 @@
+import { useGoText } from "../../goteddycloud/text";
+import { useAuth } from "../../provider/AuthProvider";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
@@ -8,12 +10,13 @@ import {
     PoweroffOutlined,
     FileSearchOutlined,
     SyncOutlined,
-    HistoryOutlined,
     BellOutlined,
     CodeSandboxOutlined,
     MinusOutlined,
     PlusOutlined,
     ExportOutlined,
+    LockOutlined,
+    AppstoreOutlined,
 } from "@ant-design/icons";
 
 import { TeddyCloudApi } from "../../api";
@@ -28,6 +31,8 @@ import { TeddyCloudSection } from "../../types/pluginsMetaTypes";
 const api = new TeddyCloudApi(defaultAPIConfig());
 
 export const SettingsSubNav = () => {
+    const text = useGoText();
+    const auth = useAuth();
     const { t, i18n } = useTranslation();
     const {
         setNavOpen,
@@ -77,12 +82,6 @@ export const SettingsSubNav = () => {
 
             title: plugin.pluginName,
         }));
-
-    const extractBaseUrl = (fullUrl: URL) => {
-        const url = new URL(fullUrl);
-        const port = url.port ? `:${url.port}` : "";
-        return `${url.protocol}//${url.hostname}${port}`;
-    };
 
     const handleRestartServer = async () => {
         await restartServer(
@@ -139,6 +138,10 @@ export const SettingsSubNav = () => {
             newKeys.push("general");
             newKeys.push("guisettings");
         }
+        if (pathname.includes("/settings/webauth")) {
+            newKeys.push("general");
+            newKeys.push("webauth");
+        }
         setOpenKeys((prevKeys) => Array.from(new Set([...prevKeys, ...newKeys])));
     };
 
@@ -167,6 +170,21 @@ export const SettingsSubNav = () => {
     };
 
     const subnav: MenuProps["items"] = [
+        {
+            key: "users",
+            label: (
+                <Link
+                    to="/settings/users"
+                    onClick={() => {
+                        setNavOpen(false);
+                        setSubNavOpen(false);
+                    }}
+                >
+                    {text("users")}
+                </Link>
+            ),
+            title: text("users"),
+        },
         {
             key: "general",
             label: (
@@ -223,6 +241,28 @@ export const SettingsSubNav = () => {
             title: t("settings.certificates.navigationTitle"),
         },
         {
+            key: "tcplugins",
+            label: (
+                <Link
+                    to="/community/tcplugins"
+                    style={{
+                        color: "currentColor",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "0 50px 0 0",
+                    }}
+                    onClick={() => {
+                        setNavOpen(false);
+                        setSubNavOpen(false);
+                    }}
+                >
+                    {t("community.plugins.navigationTitle")}
+                </Link>
+            ),
+            icon: React.createElement(AppstoreOutlined),
+            title: t("community.plugins.navigationTitle"),
+        },
+        {
             key: "rtnl",
             label: (
                 <Link
@@ -276,24 +316,6 @@ export const SettingsSubNav = () => {
             icon: React.createElement(PoweroffOutlined),
             title: t("settings.restartServer"),
         },
-        {
-            key: "legacy",
-            label: (
-                <Link
-                    to={`${extractBaseUrl(new URL(window.location.href))}/legacy.html`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                        setNavOpen(false);
-                        setSubNavOpen(false);
-                    }}
-                >
-                    {t("settings.legacyGui")}
-                </Link>
-            ),
-            icon: React.createElement(HistoryOutlined),
-            title: t("settings.legacyGui"),
-        },
         ...pluginItems,
     ];
 
@@ -304,7 +326,11 @@ export const SettingsSubNav = () => {
             openKeys={openKeys}
             selectedKeys={[]}
             onOpenChange={onOpenChange}
-            items={subnav}
+            items={
+                !auth.enabled || auth.role === "admin"
+                    ? subnav
+                    : subnav.filter((item) => item?.key === "users")
+            }
             expandIcon={({ isOpen }) => customExpandIcon({ isOpen })}
         />
     );

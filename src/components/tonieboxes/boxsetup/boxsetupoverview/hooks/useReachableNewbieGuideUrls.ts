@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useUrlsReachable, UrlToTest } from "../../../../../hooks/useUrlsReachable";
+import { UrlToTest } from "../../../../../hooks/useUrlsReachable";
 
 export const useReachableNewbieGuideUrls = () => {
     const urls: UrlToTest[] = useMemo(
@@ -23,5 +23,5 @@ export const useReachableNewbieGuideUrls = () => {
         [],
     );
 
-    return useUrlsReachable(urls);
+    return urls;
 };

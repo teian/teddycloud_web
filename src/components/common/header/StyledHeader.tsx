@@ -4,8 +4,9 @@ import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import { Button, Drawer, Menu, MenuProps, theme } from "antd";
 import { Header } from "antd/es/layout/layout";
-import { MenuOutlined, PlusOutlined } from "@ant-design/icons";
+import { LogoutOutlined, MenuOutlined, PlusOutlined } from "@ant-design/icons";
 
+import { AreaSelector } from "../../../goteddycloud/AreaSelector";
 import logoImg from "../../../assets/logo.png";
 
 import { ServerStatus } from "./ServerStatus";
@@ -13,6 +14,7 @@ import { StyledLanguageSwitcher } from "./StyledLanguageSwitcher";
 import { HiddenDesktop, HiddenMobile } from "../StyledComponents";
 import NotificationButton from "../buttons/NotificationButton";
 import { useTeddyCloud } from "../../../provider/TeddyCloudProvider";
+import { useAuth } from "../../../provider/AuthProvider";
 import { HomeSubNav } from "../../home/HomeSubNav";
 import { CommunitySubNav } from "../../community/CommunitySubNav";
 import { SettingsSubNav } from "../../settings/SettingsSubNav";
@@ -71,6 +73,7 @@ export const StyledHeader = ({
         currentTCSection,
         setCurrentTCSection,
     } = useTeddyCloud();
+    const { loggedIn, logout } = useAuth();
 
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -210,16 +213,26 @@ export const StyledHeader = ({
                     mode="horizontal"
                     items={mainNav}
                     selectedKeys={[selectedKey]}
-                    style={{ width: "calc(100vw - 510px)" }}
+                    style={{ width: "calc(100vw - 710px)" }}
                 />
             </HiddenMobile>
 
             <StyledRightPart>
+                {!isMobile && <AreaSelector />}
                 <ServerStatus />
                 {themeSwitch}
                 <StyledLanguageSwitcher />
+                {loggedIn ? (
+                    <Button
+                        type="text"
+                        icon={<LogoutOutlined />}
+                        onClick={() => void logout()}
+                        title={t("auth.logout")}
+                        aria-label={t("auth.logout")}
+                        style={{ color: "white", marginLeft: -12 }}
+                    />
+                ) : null}
                 <NotificationButton notificationCount={unconfirmedCount} />
-
                 <HiddenDesktop style={{ marginLeft: 8 }}>
                     <Button
                         type="primary"
@@ -233,6 +246,7 @@ export const StyledHeader = ({
                         onClose={() => setNavOpen(false)}
                         title="TeddyCloud"
                     >
+                        {isMobile && <AreaSelector />}
                         <StyledMenu
                             mode="vertical"
                             items={mainNav}
