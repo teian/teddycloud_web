@@ -124,6 +124,29 @@ describe("defaultAPIConfig", () => {
         }
     });
 
+    it("keeps the web session when Tonies rejects a cloud audio download", async () => {
+        sessionStorage.setItem("teddycloud_web_token", "test-token");
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(null, {
+                status: 401,
+                headers: { "X-TeddyCloud-Error-Origin": "tonies-cloud" },
+            }),
+        );
+        const authRequired = vi.fn();
+        window.addEventListener("teddycloud-auth-required", authRequired);
+        try {
+            const response = await defaultAPIConfig().fetchApi!(
+                "/content/download/72A80421/500304E0?overlay=box",
+                { method: "GET" },
+            );
+            expect(response.status).toBe(401);
+            expect(authRequired).not.toHaveBeenCalled();
+            expect(sessionStorage.getItem("teddycloud_web_token")).toBe("test-token");
+        } finally {
+            window.removeEventListener("teddycloud-auth-required", authRequired);
+        }
+    });
+
     it("does not dispatch auth-required for a successful protected request", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
         const authRequired = vi.fn();

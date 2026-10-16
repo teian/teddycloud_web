@@ -8,7 +8,6 @@ import {
     InfoCircleOutlined,
     PlayCircleOutlined,
     RetweetOutlined,
-    StopOutlined,
 } from "@ant-design/icons";
 
 import { TonieCardProps } from "../../../types/tonieTypes";
@@ -427,23 +426,15 @@ export const TonieCard: React.FC<{
                 }
             />
         ) : tonieCard.downloadTriggerUrl && tonieCard.downloadTriggerUrl.length > 0 && !readOnly ? (
-            !toniesCloudAvailable ? (
-                <Tooltip title={t("tonies.connectionToBoxineNotAvailable")}>
-                    <div style={{ position: "relative", display: "inline-block" }}>
-                        <StopOutlined
-                            style={{
-                                position: "absolute",
-                                top: 4,
-                                left: 0,
-                                color: token.colorError,
-                            }}
-                        />
-                        <DownloadOutlined />
-                    </div>
-                </Tooltip>
-            ) : (
+            // The global status probe may lack this box's cloud identity or be stale.
+            // Let the selected box's download report its actual result.
+            <Tooltip
+                title={
+                    !toniesCloudAvailable ? t("tonies.connectionToBoxineNotAvailable") : undefined
+                }
+            >
                 <DownloadOutlined key="download" onClick={handleBackgroundDownload} />
-            )
+            </Tooltip>
         ) : (
             <Tooltip
                 placement="top"

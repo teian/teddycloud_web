@@ -32,7 +32,10 @@ export const defaultAPIConfig = () =>
                 /* ignore */
             }
             const response = await fetch(url, { ...init, headers, credentials: "same-origin" });
-            if (response.status === 401) {
+            if (
+                response.status === 401 &&
+                response.headers.get("X-TeddyCloud-Error-Origin") !== "tonies-cloud"
+            ) {
                 const path = typeof url === "string" ? url : url.toString();
                 if (!path.includes("/api/auth/")) {
                     window.dispatchEvent(new Event("teddycloud-auth-required"));
