@@ -627,6 +627,14 @@ controls navigate the buffer; long display lines are shortened while exports
 retain the complete event. Incoming events are batched every 100 ms and the
 console uses plain text instead of expanding the recording into syntax tokens.
 
+RTNL function/code names and payload layouts come from the Go backend's
+`GET /api/rtnl/mapping` registry, including German/English labels and explicit
+partial/inferred annotations. The frontend contains generic byte readers and
+no firmware function dictionary. The shared recorder loads the registry once,
+refreshes after backend reconnection, and cancels stale requests on user changes.
+If loading fails, raw events remain available and the console offers a retry.
+JSON and TXT exports include the mapping revision used for decoding.
+
 Build with `npm ci && npm run build`; validate with `npm test` and
 `npm run check:translations`. The Go backend pins this fork's revision for its
 local and Docker frontend builds. Build output and dependencies are not committed.

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { subscribeToEvents, type LiveEvent } from "./liveStream";
 import { USER_STORAGE_SCOPE_EVENT } from "../utils/storage/userStorage";
 import type { RecordedRtnlEvent } from "../components/settings/rtnl/rtnlDecoder";
+import { useRtnlMapping } from "../components/settings/rtnl/hooks/useRtnlMapping";
 
 export const MAX_RTNL_ENTRIES = 2000;
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -32,15 +33,26 @@ export function appendRtnl(buffer: RtnlBuffer, event: LiveEvent, receivedAt: str
     return boundedBuffer(entries, buffer.bytes + size, buffer.dropped);
 }
 
-type Recorder = RtnlBuffer & { paused: boolean; togglePause: () => void; clearRtnl: () => void };
+type Recorder = RtnlBuffer &
+    ReturnType<typeof useRtnlMapping> & {
+        paused: boolean;
+        togglePause: () => void;
+        clearRtnl: () => void;
+    };
 const RtnlContext = createContext<Recorder>({
     ...empty(),
     paused: false,
     togglePause: () => {},
     clearRtnl: () => {},
+    mapping: null,
+    mappingLoading: true,
+    mappingError: false,
+    reloadMapping: () => {},
 });
 
 export function RtnlRecorderProvider({ children }: { children: ReactNode }) {
+    const mappingState = useRtnlMapping();
+    const { reloadMapping } = mappingState;
     const [buffer, setBuffer] = useState(empty);
     const [paused, setPaused] = useState(false);
     const pauseRef = useRef(false);
@@ -72,17 +84,26 @@ export function RtnlRecorderProvider({ children }: { children: ReactNode }) {
         setPaused(pauseRef.current);
     }, [flush]);
     useEffect(() => {
-        const stop = subscribeToEvents((event) => {
-            if (!pauseRef.current) {
-                const receivedAt = new Date().toISOString();
-                pending.current = appendRtnl(pending.current, event, receivedAt);
-                if (
-                    (pending.current.entries.length || pending.current.dropped) &&
-                    timer.current === undefined
-                )
-                    timer.current = setTimeout(flush, 100);
-            }
-        });
+        let connectedBefore = false;
+        const stop = subscribeToEvents(
+            (event) => {
+                if (!pauseRef.current) {
+                    const receivedAt = new Date().toISOString();
+                    pending.current = appendRtnl(pending.current, event, receivedAt);
+                    if (
+                        (pending.current.entries.length || pending.current.dropped) &&
+                        timer.current === undefined
+                    )
+                        timer.current = setTimeout(flush, 100);
+                }
+            },
+            () => {
+                // A backend upgrade closes the stream. Refresh its registry on
+                // reconnect without issuing one request for each RTNL event.
+                if (connectedBefore) reloadMapping();
+                connectedBefore = true;
+            },
+        );
         const reset = () => {
             clearRtnl();
             pauseRef.current = false;
@@ -96,9 +117,11 @@ export function RtnlRecorderProvider({ children }: { children: ReactNode }) {
             window.removeEventListener(USER_STORAGE_SCOPE_EVENT, reset);
             window.removeEventListener("teddycloud-auth-required", reset);
         };
-    }, [clearRtnl, flush]);
+    }, [clearRtnl, flush, reloadMapping]);
     return (
-        <RtnlContext.Provider value={{ ...buffer, paused, togglePause, clearRtnl }}>
+        <RtnlContext.Provider
+            value={{ ...buffer, ...mappingState, paused, togglePause, clearRtnl }}
+        >
             {children}
         </RtnlContext.Provider>
     );

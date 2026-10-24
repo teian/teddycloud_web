@@ -24,7 +24,17 @@ export const RtnlConsole: React.FC = () => {
     const { t, i18n } = useTranslation();
     const text = useGoText();
     const { token } = theme.useToken();
-    const { entries, dropped, paused, togglePause, clearRtnl } = useRtnl();
+    const {
+        entries,
+        dropped,
+        paused,
+        togglePause,
+        clearRtnl,
+        mapping,
+        mappingLoading,
+        mappingError,
+        reloadMapping,
+    } = useRtnl();
     const [mode, setMode] = useState<RtnlMode>("decoded");
     const [box, setBox] = useState("");
     const [anchor, setAnchor] = useState<RecordedRtnlEvent | null>(null);
@@ -39,8 +49,8 @@ export const RtnlConsole: React.FC = () => {
         [entries, box],
     );
     const view = useMemo(
-        () => rtnlWindow(visible, german, mode, anchor),
-        [visible, german, mode, anchor],
+        () => rtnlWindow(visible, german, mode, anchor, undefined, mapping),
+        [visible, german, mode, anchor, mapping],
     );
     useEffect(() => {
         if (box && !boxes.includes(box)) setBox("");
@@ -50,11 +60,11 @@ export const RtnlConsole: React.FC = () => {
             logListRef.current.scrollTop = logListRef.current.scrollHeight;
     }, [view.text, paused, anchor]);
     const save = (extension: "json" | "txt") => {
-        const snapshot = rtnlSnapshot(entries, german, dropped, box);
+        const snapshot = rtnlSnapshot(entries, german, dropped, box, mapping);
         download(
             extension === "json"
                 ? JSON.stringify(snapshot, null, 2)
-                : `goTeddyCloud RTNL | ${snapshot.createdAt} | dropped=${dropped}\n\n` +
+                : `goTeddyCloud RTNL | ${snapshot.createdAt} | dropped=${dropped} | mapping=${snapshot.mappingRevision ?? "unavailable"}\n\n` +
                       snapshot.entries
                           .map((entry) => formatDecoded(entry) + "\n  " + entry.rawText)
                           .join("\n"),
@@ -65,6 +75,17 @@ export const RtnlConsole: React.FC = () => {
         <>
             <h1>{t("settings.rtnl.title")}</h1>
             <Typography.Paragraph>{text("rtnlHelp")}</Typography.Paragraph>
+            {mappingLoading && (
+                <Typography.Paragraph type="secondary">
+                    {text("rtnlMappingLoading")}
+                </Typography.Paragraph>
+            )}
+            {mappingError && (
+                <Typography.Paragraph type="warning">
+                    {text("rtnlMappingUnavailable")}{" "}
+                    <Button onClick={reloadMapping}>{text("refresh")}</Button>
+                </Typography.Paragraph>
+            )}
             <Space wrap style={{ marginBottom: 12 }}>
                 <Segmented
                     value={mode}
@@ -113,7 +134,7 @@ export const RtnlConsole: React.FC = () => {
                 <Button
                     disabled={view.end === visible.length}
                     onClick={() => {
-                        const next = rtnlWindow(visible, german, mode, null, view.end);
+                        const next = rtnlWindow(visible, german, mode, null, view.end, mapping);
                         setAnchor(next.end === visible.length ? null : visible[next.end - 1]);
                     }}
                 >

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 import { decodeRtnl, formatDecoded, type RecordedRtnlEvent } from "./rtnlDecoder";
+import type { RtnlMapping } from "./rtnlMapping";
 
 export const RTNL_PAGE_ENTRIES = 100;
 export const RTNL_PAGE_CHARACTERS = 64 * 1024;
@@ -27,6 +28,7 @@ export function rtnlWindow(
     mode: RtnlMode,
     anchor: RecordedRtnlEvent | null = null,
     forwardFrom?: number,
+    mapping: RtnlMapping | null = null,
 ) {
     let end = anchor ? records.indexOf(anchor) + 1 : records.length;
     if (end <= 0) end = records.length;
@@ -39,7 +41,7 @@ export function rtnlWindow(
     for (let count = 0; count < RTNL_PAGE_ENTRIES; count++) {
         const index = forward ? end : start - 1;
         if (index < 0 || index >= records.length) break;
-        const entry = decodeRtnl(records[index], german);
+        const entry = decodeRtnl(records[index], german, mapping);
         let line =
             mode === "raw"
                 ? `${entry.receivedAt}${entry.box ? ` [${entry.box}]` : ""} ${entry.rawText}`

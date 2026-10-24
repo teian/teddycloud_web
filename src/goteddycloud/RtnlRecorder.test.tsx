@@ -16,12 +16,24 @@ import { USER_STORAGE_SCOPE_EVENT } from "../utils/storage/userStorage";
 const stream = vi.hoisted(() => ({
     receive: undefined as ((event: LiveEvent) => void) | undefined,
     stop: vi.fn(),
+    reload: vi.fn(),
+    connected: undefined as (() => void) | undefined,
 }));
 vi.mock("./liveStream", () => ({
-    subscribeToEvents: (receive: (event: LiveEvent) => void) => {
+    subscribeToEvents: (receive: (event: LiveEvent) => void, connected: () => void) => {
         stream.receive = receive;
+        stream.connected = connected;
+        connected();
         return stream.stop;
     },
+}));
+vi.mock("../components/settings/rtnl/hooks/useRtnlMapping", () => ({
+    useRtnlMapping: () => ({
+        mapping: null,
+        mappingLoading: false,
+        mappingError: false,
+        reloadMapping: stream.reload,
+    }),
 }));
 const event: LiveEvent = {
     type: "rtnl-raw-log3",
@@ -121,5 +133,8 @@ it("publishes a burst to consumers as one bounded batch", async () => {
     expect(renders).toBe(2);
     expect(container.firstElementChild?.getAttribute("data-count")).toBe("2000");
     expect(container.firstElementChild?.getAttribute("data-dropped")).toBe("10");
+    stream.reload.mockClear();
+    await act(async () => stream.connected!());
+    expect(stream.reload).toHaveBeenCalledOnce();
     await act(async () => root.unmount());
 });

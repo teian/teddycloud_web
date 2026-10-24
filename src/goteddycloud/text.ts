@@ -2,6 +2,14 @@
 import { useTranslation } from "react-i18next";
 const labels = {
     rtnlDecoded: ["Decoded", "Decodiert"],
+    rtnlMappingLoading: [
+        "Loading RTNL definitions from the server…",
+        "RTNL-Definitionen werden vom Server geladen…",
+    ],
+    rtnlMappingUnavailable: [
+        "RTNL definitions could not be loaded. Raw events remain available.",
+        "RTNL-Definitionen konnten nicht geladen werden. Rohdaten bleiben verfügbar.",
+    ],
     rtnlBoth: ["Both", "Beides"],
     rtnlBox: ["Filter by box", "Nach Box filtern"],
     rtnlAllBoxes: ["All boxes", "Alle Boxen"],
