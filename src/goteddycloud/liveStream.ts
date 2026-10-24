@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 import { defaultAPIConfig } from "../config/defaultApiConfig";
 
-export type LiveEvent = { type: string; data: unknown };
+export type LiveEvent = { type: string; data: unknown; box?: string };
 
 // Fetch streaming retains the existing bearer/cookie authentication, including
 // reverse-proxy prefixes. Native EventSource cannot attach the bearer header.

@@ -61,6 +61,7 @@ import { CustomTonieCreatorPage } from "./pages/tonies/CustomTonieCreatorPage";
 import { UsersAreasPage } from "./goteddycloud/UsersAreasPage";
 import { SharedCatalogsPage } from "./goteddycloud/SharedCatalogsPage";
 import { LiveUpdatesProvider } from "./goteddycloud/LiveUpdates";
+import { RtnlRecorderProvider } from "./goteddycloud/RtnlRecorder";
 import "./styles/matrix/matrix.css";
 import { matrixAlgorithm } from "./styles/matrix/matrixAlgorithm";
 import MatrixRain from "./styles/matrix/matrixRain";
@@ -69,6 +70,14 @@ import { detectColorScheme } from "./utils/browser/browserUtils";
 import { StyledThemeProvider } from "./provider/StyledThemeProvider";
 import { USER_STORAGE_SCOPE_EVENT, userStorage } from "./utils/storage/userStorage";
 import { withBase } from "./utils/basePath";
+
+function AppDataProvider({ children }: { children: ReactNode }) {
+    return (
+        <TeddyCloudProvider>
+            <RtnlRecorderProvider>{children}</RtnlRecorderProvider>
+        </TeddyCloudProvider>
+    );
+}
 
 function App() {
     const { defaultAlgorithm, darkAlgorithm } = theme;
@@ -226,7 +235,7 @@ function AuthenticatedApp({
     }
 
     return (
-        <TeddyCloudProvider>
+        <AppDataProvider>
             <LiveUpdatesProvider>
                 <div className="App">
                     <Layout style={{ minHeight: "100vh" }}>
@@ -412,7 +421,7 @@ function AuthenticatedApp({
                     </Layout>
                 </div>
             </LiveUpdatesProvider>
-        </TeddyCloudProvider>
+        </AppDataProvider>
     );
 }
 

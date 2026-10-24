@@ -609,6 +609,12 @@ soon as the box reports them, without waiting for an audio download. The stream
 reconnects and restores the last-tag snapshot; RTNL uses the same connection.
 Live inventory refreshes keep existing cards mounted and retain applied filters.
 
+The RTNL console offers decoded, raw and combined views, filtering by box,
+pause/resume, and JSON/TXT snapshot downloads. It records across route changes
+for the authenticated page session (up to 2,000 events / 2 MiB). User changes
+clear the recording. Exports include receive timestamps, decoded fields and raw
+packets; unknown functions stay unknown and inferred formats are labelled.
+
 Build with `npm ci && npm run build`; validate with `npm test` and
 `npm run check:translations`. The Go backend pins this fork's revision for its
 local and Docker frontend builds. Build output and dependencies are not committed.

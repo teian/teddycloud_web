@@ -1,6 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 import { useTranslation } from "react-i18next";
 const labels = {
+    rtnlDecoded: ["Decoded", "Decodiert"],
+    rtnlBoth: ["Both", "Beides"],
+    rtnlBox: ["Filter by box", "Nach Box filtern"],
+    rtnlAllBoxes: ["All boxes", "Alle Boxen"],
+    rtnlPause: ["Pause recording", "Aufzeichnung pausieren"],
+    rtnlResume: ["Resume recording", "Aufzeichnung fortsetzen"],
+    rtnlSnapshot: ["Snapshot (JSON)", "Snapshot (JSON)"],
+    rtnlText: ["Log (TXT)", "Protokoll (TXT)"],
+    rtnlEntries: ["entries", "Einträge"],
+    rtnlDropped: ["older entries discarded", "ältere Einträge verworfen"],
+    rtnlHelp: [
+        "Recording continues across pages during this session (up to 2,000 entries / 2 MiB). Snapshots include decoded and raw data. Unknown functions retain their numeric values; inferred formats are marked. Switching users clears the recording.",
+        "Die Aufzeichnung läuft in dieser Sitzung auch beim Seitenwechsel weiter (bis 2.000 Einträge / 2 MiB). Snapshots enthalten decodierte und rohe Daten. Unbekannte Funktionen behalten ihre Zahlenwerte; abgeleitete Formate sind markiert. Ein Benutzerwechsel leert die Aufzeichnung.",
+    ],
     tagPresented: ["Tag presented", "Tag aufgelegt"],
     liveUpdates: ["Live updates", "Live-Aktualisierungen"],
     users: ["Users and areas", "Benutzer und Bereiche"],
