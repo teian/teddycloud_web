@@ -11,18 +11,25 @@ type StoredEntry = RecordedRtnlEvent & { bytes: number };
 export type RtnlBuffer = { entries: StoredEntry[]; bytes: number; dropped: number };
 const empty = (): RtnlBuffer => ({ entries: [], bytes: 0, dropped: 0 });
 
+function boundedBuffer(entries: StoredEntry[], bytes: number, dropped: number): RtnlBuffer {
+    let start = 0;
+    while (entries.length - start > MAX_RTNL_ENTRIES || bytes > MAX_BYTES) {
+        bytes -= entries[start++].bytes;
+        dropped++;
+    }
+    return { entries: start ? entries.slice(start) : entries, bytes, dropped };
+}
+
 export function appendRtnl(buffer: RtnlBuffer, event: LiveEvent, receivedAt: string): RtnlBuffer {
-    if (!["rtnl-raw-log2", "rtnl-raw-log3", "tag-present", "tag-updated"].includes(event.type))
+    if (
+        !["rtnl-raw-log2", "rtnl-raw-log3", "tag-present", "tag-updated", "audio-sync"].includes(
+            event.type,
+        )
+    )
         return buffer;
     const size = JSON.stringify(event).length * 2;
     const entries = [...buffer.entries, { event, receivedAt, bytes: size }];
-    let bytes = buffer.bytes + size;
-    let dropped = buffer.dropped;
-    while (entries.length > MAX_RTNL_ENTRIES || bytes > MAX_BYTES) {
-        bytes -= entries.shift()!.bytes;
-        dropped++;
-    }
-    return { entries, bytes, dropped };
+    return boundedBuffer(entries, buffer.bytes + size, buffer.dropped);
 }
 
 type Recorder = RtnlBuffer & { paused: boolean; togglePause: () => void; clearRtnl: () => void };
@@ -37,20 +44,47 @@ export function RtnlRecorderProvider({ children }: { children: ReactNode }) {
     const [buffer, setBuffer] = useState(empty);
     const [paused, setPaused] = useState(false);
     const pauseRef = useRef(false);
-    const clearRtnl = useCallback(() => setBuffer(empty()), []);
+    const pending = useRef(empty());
+    const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const flush = useCallback(() => {
+        clearTimeout(timer.current);
+        timer.current = undefined;
+        const batch = pending.current;
+        pending.current = empty();
+        if (batch.entries.length || batch.dropped)
+            setBuffer((current) =>
+                boundedBuffer(
+                    [...current.entries, ...batch.entries],
+                    current.bytes + batch.bytes,
+                    current.dropped + batch.dropped,
+                ),
+            );
+    }, []);
+    const clearRtnl = useCallback(() => {
+        clearTimeout(timer.current);
+        timer.current = undefined;
+        pending.current = empty();
+        setBuffer(empty());
+    }, []);
     const togglePause = useCallback(() => {
+        flush();
         pauseRef.current = !pauseRef.current;
         setPaused(pauseRef.current);
-    }, []);
+    }, [flush]);
     useEffect(() => {
         const stop = subscribeToEvents((event) => {
             if (!pauseRef.current) {
                 const receivedAt = new Date().toISOString();
-                setBuffer((current) => appendRtnl(current, event, receivedAt));
+                pending.current = appendRtnl(pending.current, event, receivedAt);
+                if (
+                    (pending.current.entries.length || pending.current.dropped) &&
+                    timer.current === undefined
+                )
+                    timer.current = setTimeout(flush, 100);
             }
         });
         const reset = () => {
-            setBuffer(empty());
+            clearRtnl();
             pauseRef.current = false;
             setPaused(false);
         };
@@ -58,10 +92,11 @@ export function RtnlRecorderProvider({ children }: { children: ReactNode }) {
         window.addEventListener("teddycloud-auth-required", reset);
         return () => {
             stop();
+            clearTimeout(timer.current);
             window.removeEventListener(USER_STORAGE_SCOPE_EVENT, reset);
             window.removeEventListener("teddycloud-auth-required", reset);
         };
-    }, []);
+    }, [clearRtnl, flush]);
     return (
         <RtnlContext.Provider value={{ ...buffer, paused, togglePause, clearRtnl }}>
             {children}

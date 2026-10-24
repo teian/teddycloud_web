@@ -71,6 +71,25 @@ export function decodeRtnl(record: RecordedRtnlEvent, german = false): DecodedRt
         entry.rawText = `Raw3 | Datetime: ${timestamp} Unknown: ${code}`;
         return entry;
     }
+    if (event.type === "audio-sync") {
+        entry.known = true;
+        const phase = string(data.phase);
+        const names: Record<string, [string, string]> = {
+            "freshness-response": [
+                "Server: synchronization response",
+                "Server: Synchronisierungsantwort",
+            ],
+            claim: ["Server: tag claim", "Server: Tag-Anmeldung"],
+            "local-content-transfer": ["Server: audio transfer", "Server: Audioübertragung"],
+            "local-chapter-transfer": ["Server: chapter transfer", "Server: Kapitelübertragung"],
+            "content-unavailable": ["Server: audio unavailable", "Server: Audio nicht verfügbar"],
+        };
+        entry.summary =
+            names[phase]?.[german ? 1 : 0] ||
+            text("Server: audio synchronization", "Server: Audiosynchronisierung");
+        entry.fields = data;
+        return entry;
+    }
     if (event.type !== "rtnl-raw-log2") {
         entry.known = true;
         entry.summary =

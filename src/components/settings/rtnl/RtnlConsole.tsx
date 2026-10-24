@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Typography, Button, Segmented, Select, Space, theme } from "antd";
 import { useTranslation } from "react-i18next";
 import { useRtnl } from "./hooks/useRtnl";
-import { decodeRtnl, formatDecoded, rtnlSnapshot } from "./rtnlDecoder";
+import { formatDecoded, rtnlSnapshot, type RecordedRtnlEvent } from "./rtnlDecoder";
+import { rtnlBox, rtnlWindow, type RtnlMode } from "./rtnlView";
 import { useGoText } from "../../../goteddycloud/text";
 
 function download(contents: string, extension: "json" | "txt") {
@@ -26,31 +25,30 @@ export const RtnlConsole: React.FC = () => {
     const text = useGoText();
     const { token } = theme.useToken();
     const { entries, dropped, paused, togglePause, clearRtnl } = useRtnl();
-    const [mode, setMode] = useState("decoded");
+    const [mode, setMode] = useState<RtnlMode>("decoded");
     const [box, setBox] = useState("");
+    const [anchor, setAnchor] = useState<RecordedRtnlEvent | null>(null);
     const german = i18n.language.startsWith("de");
     const logListRef = useRef<HTMLDivElement>(null);
-    const decoded = useMemo(
-        () => entries.map((entry) => decodeRtnl(entry, german)),
-        [entries, german],
-    );
     const boxes = useMemo(
-        () => [...new Set(decoded.map((entry) => entry.box).filter(Boolean))].sort(),
-        [decoded],
+        () => [...new Set(entries.map(rtnlBox).filter(Boolean))].sort(),
+        [entries],
     );
-    const visible = decoded.filter((entry) => !box || entry.box === box);
+    const visible = useMemo(
+        () => entries.filter((entry) => !box || rtnlBox(entry) === box),
+        [entries, box],
+    );
+    const view = useMemo(
+        () => rtnlWindow(visible, german, mode, anchor),
+        [visible, german, mode, anchor],
+    );
     useEffect(() => {
         if (box && !boxes.includes(box)) setBox("");
     }, [box, boxes]);
-    const lines = visible.map((entry) =>
-        mode === "raw"
-            ? `${entry.receivedAt}${entry.box ? ` [${entry.box}]` : ""} ${entry.rawText}`
-            : formatDecoded(entry) + (mode === "both" ? "\n  " + entry.rawText : ""),
-    );
     useEffect(() => {
-        if (!paused && logListRef.current)
+        if (!paused && !anchor && logListRef.current)
             logListRef.current.scrollTop = logListRef.current.scrollHeight;
-    }, [entries, paused]);
+    }, [view.text, paused, anchor]);
     const save = (extension: "json" | "txt") => {
         const snapshot = rtnlSnapshot(entries, german, dropped, box);
         download(
@@ -63,7 +61,6 @@ export const RtnlConsole: React.FC = () => {
             extension,
         );
     };
-    const dark = token.colorBgBase === "#000" || token.colorBgBase === "#000000";
     return (
         <>
             <h1>{t("settings.rtnl.title")}</h1>
@@ -71,7 +68,7 @@ export const RtnlConsole: React.FC = () => {
             <Space wrap style={{ marginBottom: 12 }}>
                 <Segmented
                     value={mode}
-                    onChange={(value) => setMode(String(value))}
+                    onChange={(value) => setMode(value as RtnlMode)}
                     options={[
                         { label: text("rtnlDecoded"), value: "decoded" },
                         { label: "Raw", value: "raw" },
@@ -82,7 +79,10 @@ export const RtnlConsole: React.FC = () => {
                     aria-label={text("rtnlBox")}
                     style={{ minWidth: 190 }}
                     value={box}
-                    onChange={setBox}
+                    onChange={(value) => {
+                        setBox(value);
+                        setAnchor(null);
+                    }}
                     options={[
                         { label: text("rtnlAllBoxes"), value: "" },
                         ...boxes.map((value) => ({ label: value, value })),
@@ -98,9 +98,31 @@ export const RtnlConsole: React.FC = () => {
                 <Button onClick={clearRtnl}>{t("settings.rtnl.clear")}</Button>
             </Space>
             <Typography.Paragraph type="secondary">
+                {visible.length ? `${view.start + 1}–${view.end} / ` : ""}
                 {visible.length} {text("rtnlEntries")}
                 {dropped > 0 ? ` · ${dropped} ${text("rtnlDropped")}` : ""}
+                {view.truncated ? ` · ${text("rtnlFullInSnapshot")}` : ""}
             </Typography.Paragraph>
+            <Space wrap style={{ marginBottom: 12 }}>
+                <Button
+                    disabled={view.start === 0}
+                    onClick={() => setAnchor(visible[view.start - 1])}
+                >
+                    {text("rtnlOlder")}
+                </Button>
+                <Button
+                    disabled={view.end === visible.length}
+                    onClick={() => {
+                        const next = rtnlWindow(visible, german, mode, null, view.end);
+                        setAnchor(next.end === visible.length ? null : visible[next.end - 1]);
+                    }}
+                >
+                    {text("rtnlNewer")}
+                </Button>
+                <Button disabled={!anchor} onClick={() => setAnchor(null)}>
+                    {text("rtnlLatest")}
+                </Button>
+            </Space>
             <div
                 className="rtnl-log-container"
                 ref={logListRef}
@@ -112,28 +134,23 @@ export const RtnlConsole: React.FC = () => {
                     scrollbarColor: `${token.colorTextDescription} ${token.colorBgContainer}`,
                 }}
             >
-                <SyntaxHighlighter
-                    language="log"
-                    style={dark ? oneDark : oneLight}
-                    wrapLongLines={mode !== "raw"}
-                    codeTagProps={{
-                        style: {
-                            whiteSpace: mode === "raw" ? "pre" : "pre-wrap",
-                            overflowWrap: "anywhere",
-                        },
-                    }}
-                    customStyle={{
-                        borderRadius: 0,
+                <pre
+                    style={{
                         margin: 0,
-                        border: "none",
+                        padding: 12,
+                        color: token.colorText,
+                        fontSize: 12,
+                        lineHeight: 1.5,
+                        whiteSpace: mode === "raw" ? "pre" : "pre-wrap",
+                        overflowWrap: "anywhere",
                         width: mode === "raw" ? "max-content" : "100%",
                         boxSizing: "border-box",
                         minWidth: "100%",
                         minHeight: "max(38vh, 320px)",
                     }}
                 >
-                    {lines.join("\n")}
-                </SyntaxHighlighter>
+                    {view.text}
+                </pre>
             </div>
         </>
     );

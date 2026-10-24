@@ -88,3 +88,37 @@ it("exports received timestamps, decoded fields, complete raw events and the sel
         raw: { data: { field9: "ABCD" } },
     });
 });
+
+it("retains server synchronization decisions alongside RTNL without inferring a transfer", () => {
+    const record: RecordedRtnlEvent = {
+        receivedAt: "2026-10-24T17:55:01.000Z",
+        event: {
+            type: "audio-sync",
+            box: "6CC374F2CBD8",
+            data: {
+                phase: "freshness-response",
+                status: 200,
+                requested: 1,
+                serverVersion: "dev-test",
+                markedRuids: ["be3cea0e500304e0"],
+                tags: [
+                    {
+                        ruid: "be3cea0e500304e0",
+                        source: "lib://by/audioID/1748955785.taf",
+                        boxAudioId: 1634291675,
+                        localAudioId: 1748955785,
+                        localState: "ready",
+                        marked: true,
+                    },
+                ],
+            },
+        },
+    };
+    const decoded = decodeRtnl(record, true);
+    expect(decoded.summary).toBe("Server: Synchronisierungsantwort");
+    expect(decoded.fields).toEqual(record.event.data);
+    expect(decoded.fields).not.toHaveProperty("fullDownload");
+    const saved = rtnlSnapshot([record], true, 0, "6CC374F2CBD8");
+    expect(saved.entries[0].raw).toEqual(record.event);
+    expect(saved.entries[0].fields.serverVersion).toBe("dev-test");
+});

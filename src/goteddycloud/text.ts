@@ -11,9 +11,16 @@ const labels = {
     rtnlText: ["Log (TXT)", "Protokoll (TXT)"],
     rtnlEntries: ["entries", "Einträge"],
     rtnlDropped: ["older entries discarded", "ältere Einträge verworfen"],
+    rtnlOlder: ["Older entries", "Ältere Einträge"],
+    rtnlNewer: ["Newer entries", "Neuere Einträge"],
+    rtnlLatest: ["Latest entries", "Neueste Einträge"],
+    rtnlFullInSnapshot: [
+        "Long entries are complete in snapshots",
+        "Lange Einträge sind im Snapshot vollständig",
+    ],
     rtnlHelp: [
-        "Recording continues across pages during this session (up to 2,000 entries / 2 MiB). Snapshots include decoded and raw data. Unknown functions retain their numeric values; inferred formats are marked. Switching users clears the recording.",
-        "Die Aufzeichnung läuft in dieser Sitzung auch beim Seitenwechsel weiter (bis 2.000 Einträge / 2 MiB). Snapshots enthalten decodierte und rohe Daten. Unbekannte Funktionen behalten ihre Zahlenwerte; abgeleitete Formate sind markiert. Ein Benutzerwechsel leert die Aufzeichnung.",
+        "Recording continues across pages during this session (up to 2,000 entries / 2 MiB). Snapshots include decoded and raw data plus server synchronization decisions: selected source, box/file audio IDs, update marks and transfers. Unknown functions retain their numeric values; inferred formats are marked. Switching users clears the recording.",
+        "Die Aufzeichnung läuft in dieser Sitzung auch beim Seitenwechsel weiter (bis 2.000 Einträge / 2 MiB). Snapshots enthalten decodierte und rohe Daten sowie die Synchronisierungsentscheidungen des Servers: Quelle, Audio-IDs von Box und Datei, Aktualisierungsmarkierungen und Übertragungen. Unbekannte Funktionen behalten ihre Zahlenwerte; abgeleitete Formate sind markiert. Ein Benutzerwechsel leert die Aufzeichnung.",
     ],
     tagPresented: ["Tag presented", "Tag aufgelegt"],
     liveUpdates: ["Live updates", "Live-Aktualisierungen"],
