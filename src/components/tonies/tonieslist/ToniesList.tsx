@@ -62,6 +62,10 @@ export const ToniesList: React.FC<{
     // ------------------------
 
     const [loading, setLoading] = useState(true);
+    const [presentationScope, setPresentationScope] = useState<{
+        overlay: string;
+        boxes: string[];
+    }>();
     const [lastTonieboxRUIDs, setLastTonieboxRUIDs] = useState<Array<[string, string, string]>>([]);
     const [pageSize, setPageSize] = useState<number>(() => {
         const storedState = userStorage.getItem(STORAGE_KEY);
@@ -199,19 +203,33 @@ export const ToniesList: React.FC<{
     }, []);
 
     useEffect(() => {
+        let active = true;
         const fetchTonieboxes = async () => {
             const fetchTonieboxLastRUID = async (id: string) => api.apiGetTonieboxLastRUID(id);
             const fetchTonieboxLastRUIDTime = async (id: string) =>
                 api.apiGetTonieboxLastRUIDTime(id);
 
             const tonieboxData = await api.apiGetTonieboxesIndex();
+            // The selector groups boxes sharing a content directory under one box ID.
+            // Match live events against every box in that library, not just its representative.
+            const contentDir = await api.apiGetTonieboxContentDir(overlay);
+            const scopedBoxes = (
+                await Promise.all(
+                    tonieboxData.map(async (box) => ({
+                        ...box,
+                        contentDir: await api.apiGetTonieboxContentDir(box.ID),
+                    })),
+                )
+            ).filter((box) => box.contentDir === contentDir);
             const tonieboxLastRUIDs = await Promise.all(
-                tonieboxData.map(async (toniebox) => {
+                scopedBoxes.map(async (toniebox) => {
                     const lastRUID = await fetchTonieboxLastRUID(toniebox.ID);
                     const lastRUIDTime = await fetchTonieboxLastRUIDTime(toniebox.ID);
                     return [lastRUID, lastRUIDTime, toniebox.boxName] as [string, string, string];
                 }),
             );
+            if (!active) return;
+            setPresentationScope({ overlay, boxes: scopedBoxes.map((box) => box.ID) });
             setLastTonieboxRUIDs(tonieboxLastRUIDs);
         };
 
@@ -224,7 +242,10 @@ export const ToniesList: React.FC<{
             setShowSourceInfo((await response.text()) === "true");
         };
         fetchShowSourceInfo();
-    }, [noLastRuid, revision]);
+        return () => {
+            active = false;
+        };
+    }, [noLastRuid, revision, overlay]);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
@@ -722,6 +743,11 @@ export const ToniesList: React.FC<{
                                     tonieCard={tonie}
                                     lastRUIDs={lastTonieboxRUIDs}
                                     overlay={overlay}
+                                    presentedBoxes={
+                                        presentationScope?.overlay === overlay
+                                            ? presentationScope.boxes
+                                            : undefined
+                                    }
                                     readOnly={readOnly}
                                     defaultLanguage={defaultLanguage}
                                     showSourceInfo={showSourceInfo}

@@ -46,6 +46,7 @@ export const TonieCard: React.FC<{
     tonieCard: TonieCardProps;
     lastRUIDs: Array<[string, string, string]>;
     overlay: string;
+    presentedBoxes?: string[];
     readOnly: boolean;
     defaultLanguage?: string;
     showSourceInfo?: boolean;
@@ -58,6 +59,7 @@ export const TonieCard: React.FC<{
     tonieCard,
     lastRUIDs,
     overlay,
+    presentedBoxes,
     readOnly,
     defaultLanguage = "",
     showSourceInfo = true,
@@ -70,8 +72,10 @@ export const TonieCard: React.FC<{
     const { t } = useTranslation();
     const { token } = useToken();
     const { presented } = useLiveUpdates();
-    const isLivePresented = isPresentedTag(presented, tonieCard.ruid, overlay);
-    const hasLiveState = Object.values(presented).some((tag) => !overlay || tag.box === overlay);
+    const isLivePresented = isPresentedTag(presented, tonieCard.ruid, presentedBoxes ?? overlay);
+    const hasLiveState = Object.values(presented).some((tag) =>
+        presentedBoxes ? presentedBoxes.includes(tag.box) : !overlay || tag.box === overlay,
+    );
     const {
         addNotification,
         addLoadingNotification,

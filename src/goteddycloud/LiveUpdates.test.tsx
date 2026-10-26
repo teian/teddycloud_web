@@ -96,3 +96,15 @@ it("highlights immediately, respects box overlays, coalesces refreshes and close
     expect(state.stop).toHaveBeenCalledTimes(1);
     expect(state.invalidate).toHaveBeenCalledTimes(1);
 });
+
+it("matches all boxes sharing a library without leaking other libraries", () => {
+    const ruid = "7c47c80e500304e0";
+    const presented = {
+        second: { box: "second", ruid, time: 1 },
+        unrelated: { box: "unrelated", ruid: "22000000500304e0", time: 2 },
+    };
+    expect(isPresentedTag(presented, ruid, "first")).toBe(false);
+    expect(isPresentedTag(presented, ruid.toUpperCase(), ["first", "second"])).toBe(true);
+    expect(isPresentedTag(presented, "22000000500304e0", ["first", "second"])).toBe(false);
+    expect(isPresentedTag(presented, ruid, [])).toBe(false);
+});

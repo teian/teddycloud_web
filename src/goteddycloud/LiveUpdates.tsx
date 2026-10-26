@@ -96,8 +96,14 @@ export function useLiveUpdates() {
     return useContext(LiveContext);
 }
 
-export function isPresentedTag(presented: LiveState["presented"], ruid: string, overlay: string) {
+export function isPresentedTag(
+    presented: LiveState["presented"],
+    ruid: string,
+    overlay: string | string[],
+) {
     return Object.values(presented).some(
-        (tag) => tag.ruid === ruid.toLowerCase() && (!overlay || tag.box === overlay),
+        (tag) =>
+            tag.ruid === ruid.toLowerCase() &&
+            (Array.isArray(overlay) ? overlay.includes(tag.box) : !overlay || tag.box === overlay),
     );
 }
